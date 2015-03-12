@@ -1,4 +1,4 @@
-This is a simple IRC bot made by Bastien Crochez.
+This is a simple IRC bot made in Python 3 by Bastien Crochez.
 It was made for the channel #TransformiceFR with some other features.
 
 my_socket.py needs the module chardet from pypi: https://pypi.python.org/pypi/chardet
