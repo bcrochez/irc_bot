@@ -14,7 +14,7 @@ def parse_prvmsg(s, listOfMod, pseudo, canal, message):
     if first_word == '\x01PING':
         s.send("NOTICE", pseudo, "PONG!")
     elif first_word == '\x01VERSION\x01':
-        s.send("NOTICE", pseudo, ":"+s.NICK+" version "+VERSION+" par "+s.MASTER)
+        s.send("NOTICE", pseudo, ":" + s.NICK + " version " + VERSION + " par " + s.MASTER)
     if first_word.startswith('!'):
         try:
             cmds[first_word.lower()](s, pseudo, canal, message)
@@ -158,7 +158,7 @@ def parse(s, line, listOfChan, listOfMod):
         get_mods(listOfMod, message)
     if cmd == "PRIVMSG":
         parse_prvmsg(s, listOfMod, pseudo, canal, message)
-    if cmd == "NOTICE" and canal == "PouletBot":
+    if cmd == "NOTICE" and canal == s.NICK:
         parse_notice(s, listOfChan, pseudo, message)
 
 
