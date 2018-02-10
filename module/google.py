@@ -32,6 +32,6 @@ def get_time_by_geoloc(address = "Paris"):
     except:
         print("*** erreur time zone ***")
         return  'Lieu introuvable', '-', '-', '-', '-'
-    timezone = datetime.timezone(datetime.timedelta(seconds=data['rawOffset']+data['dstOffset']), data['timeZoneId'])
+    timezone = datetime.timezone(datetime.timedelta(seconds=data['dstOffset']+data['rawOffset']), data['timeZoneId'])
     dt = datetime.datetime.now(timezone)
     return name, dt.hour, dt.minute, dt.second, data['timeZoneName']

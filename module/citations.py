@@ -1,22 +1,23 @@
 # -*-coding:UTF-8 -*
 
-import random
+import random, os, sys
 random.seed()
 
 print("---- start loading citations ----")
 
 names = ['cinema', 'informatique', 'litt_fr', 'sciences', 'transfo', 'philo', 'proverbes']
-
+path = os.path.dirname(sys.argv[0])
 
 def load_citations():
     global citations
     global names
     citations = {}
+    error_names = []
     for name in names:
         try:
-            f = open('module/citations/'+name+'.txt', encoding='utf-8')
+            f = open(path+'/module/citations/'+name+'.txt', encoding='utf-8')
         except:
-            names.remove(name)
+            error_names.append(name)
             print("*** impossible d'ouvrir: "+name+" ***")
             continue
         citations_tmp = []
@@ -25,7 +26,9 @@ def load_citations():
         citations[name] = citations_tmp
         print("  -- "+name+" file load --")
         f.close()
-    
+    for name in error_names:
+        names.remove(name)
+        
 citations = {}
 load_citations()
     
@@ -37,7 +40,7 @@ def load_cita_theme(theme):
     if theme not in names:
         names.append(theme)
     try:
-        f = open('citations/'+theme+'.txt', encoding='utf-8')
+        f = open(path+'/module/citations/'+theme+'.txt', encoding='utf-8')
     except:
         names.remove(theme)
         print("*** impossible d'ouvrir: "+theme+" ***")

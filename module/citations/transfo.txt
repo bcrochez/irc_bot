@@ -1,4 +1,4 @@
-[Cobrabraise] Je ne cherche que ce qui est trouvable
+﻿[Cobrabraise] Je ne cherche que ce qui est trouvable
 %
 [Korsakofff] quoi ça existe plus msn ?
 %
@@ -9,3 +9,9 @@
 <Cobrabraise> Dans ce monde il y a deux types de poulets, les rôtis et les braisés
 %
 <Pouletbraise> Enfin non, il pleut pas, il y a de l'eau qui tombe
+%
+* Pheicas a expulsé Pheicas de #TransformiceFR (Pheicas)
+%
+[Heneya] j'ai du mal à jouer avec un truc en bouche tu m'excuseras hein
+%
+[Eponj] J'aime une femme

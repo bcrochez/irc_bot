@@ -2,7 +2,11 @@
 
 from html.parser import HTMLParser
 import urllib.request
-#from bs4 import BeautifulSoup
+import json
+import re
+import datetime
+
+youtubeURL = "https://www.googleapis.com/youtube/v3/videos?"
 
 class YoutubeParser(HTMLParser):
     def reset(self):
@@ -49,36 +53,28 @@ class YoutubeParser(HTMLParser):
 yt_parser = YoutubeParser() 
 print("---- youtube module loaded ----")
 
+def get_video(video_id):
+    request = youtubeURL+"part=statistics,snippet"+"&id="+video_id+"&key="+id_key
+    data_j = urllib.request.urlopen(request).read().decode()
+    data = json.loads(data_j)["items"][0]
+    return data["snippet"]["title"], data["statistics"]["viewCount"], datetime.datetime.strptime(data["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%d-%m-%Y")
+    
+def retrieve_id(url):
+    m = re.search("v=((\w|-)+)", url)
+    return m.group(1)
+
 def get_title_and_views(url):
     yt_parser.reset()
     try:
-        html = urllib.request.urlopen(url).read().decode()
-        yt_parser.feed(html)
+        #html = urllib.request.urlopen(url).read().decode()
+        #yt_parser.feed(html)
+        id_video = retrieve_id(url)
+        return get_video(id_video)
     except:
         print("*** erreur url youtube ***")
     if yt_parser.views.split('\xa0')[-1] == "vues":
         yt_parser.views = yt_parser.views.split('\xa0')[0]
     return yt_parser.title, yt_parser.views, yt_parser.date
-    
-#def get_title_and_views_0(url):
-#    try:
-#        html = urllib.request.urlopen(url).read()
-#    except:
-#        print("impossible d'accéder à l'url")
-#    soup = BeautifulSoup(html)
-#    title = get_title(soup)
-#    views = get_views(soup)
-#    return title, views
 
-def get_title(soup):
-    try:
-        tmp = soup.title.string.split("-")
-        return "-".join(tmp[0:-1]).rstrip()
-    except:
-        return ""
 
-def get_views(soup):
-    try:
-        return soup.find_all("div", class_="watch-view-count")[0].string#.replace("\xa0", " ")
-    except:
-        return '0'
+#print(get_video("qmsbP13xu6k"))

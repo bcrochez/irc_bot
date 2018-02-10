@@ -1,10 +1,11 @@
 # -*-coding:UTF-8 -*
 
-VERSION = "3.0"
-
 import my_socket
 import cmd
 import threading
+
+VERSION = "3.5"
+
 
 def parse_prvmsg(s, listOfMod, pseudo, canal, message):
     first_word = message[0]
@@ -17,14 +18,15 @@ def parse_prvmsg(s, listOfMod, pseudo, canal, message):
     if first_word.startswith('!'):
         try:
             cmds[first_word.lower()](s, pseudo, canal, message)
-        except:
-            pass     
-    if canal[0] == '#': 
+        except KeyError:
+            print("error while processing command : "+first_word)
+    if canal[0] == '#':
         for msg in message:
-            if msg.startswith("http://www.youtube.com/watch") or msg.startswith("https://www.youtube.com/watch"): 
+            if msg.startswith("http://www.youtube.com/watch") or msg.startswith("https://www.youtube.com/watch"):
                 cmd.send_yt(s, canal, msg)
             if msg.startswith("http://atelier801.com/topic?"):
                 cmd.send_topic_title(s, canal, msg)
+
 
 # quand le bot reçoit un notice
 def parse_notice(s, listOfChan, pseudo, message):
@@ -41,12 +43,14 @@ def parse_notice(s, listOfChan, pseudo, message):
             s.quit(to_send)
         elif message[0] == "send_data":
             s.send_data()
+        elif message[0] == "stop" or message[0] == "shutdown":
+            s.quit(":Shuting down")
+        elif message[0] == "nick":
+            s.nick(message[1])
         else:
             chan = message[0]
-            try:
-                s.send("PRIVMSG", chan, ":"+" ".join(message[1:]))
-            except:
-                print("*** rien à envoyer ***")
+            s.send("PRIVMSG", chan, ":" + " ".join(message[1:]))
+
 
 # récupère la liste des opérateurs
 def get_mods(listOfMod, message):
@@ -66,6 +70,7 @@ def get_mods(listOfMod, message):
         i += 1
     print(listOfChan, listOfMod)
 
+
 # quand quelqu'un rejoint un canal
 def join_canal(s, listOfChan, listOfMod, pseudo, canal):
     if pseudo == s.NICK:
@@ -73,13 +78,15 @@ def join_canal(s, listOfChan, listOfMod, pseudo, canal):
         if low_canal not in listOfChan:
             listOfChan.append(low_canal)
             listOfMod.setdefault(low_canal, [])
-        #s.names(canal)
-    s.send("NOTICE", pseudo, ":Salut " + pseudo + "! Bienvenue sur le canal \x02" + canal + "\x02. Tape \x02!aide\x02 si tu as besoin d'aide.")
+            # s.names(canal)
+            # s.send("NOTICE", pseudo, ":Salut " + pseudo + "! Bienvenue sur le canal \x02" + canal + "\x02. Tape \x02!aide\x02 si tu as besoin d'aide.")
+
 
 # quand quelqu'un part ou est kické le canal
 def part_or_kick(listOfMod, pseudo, canal):
     if pseudo in listOfMod[canal.lower()]:
         listOfMod[canal.lower()].remove(pseudo)
+
 
 # quand quelqu'un quitte le canal
 def so_quit(listOfChan, listOfMod, pseudo):
@@ -87,18 +94,23 @@ def so_quit(listOfChan, listOfMod, pseudo):
         if pseudo in listOfMod[chan]:
             listOfMod[chan].remove(pseudo)
 
+
 # obtient le pseudo depuis la ligne reçue
 def get_pseudo(nick):
     nick = str(nick).strip(":")
     return nick.split("!")[0]
 
+
 # quand quelqu'un change de mode
-def mode(listOfMod, canal, message):
+def mode(s, listOfMod, canal, message):
     if message[0].startswith('+') and "o" in message[0]:
         listOfMod[canal.lower()].append(message[1])
     elif message[0].startswith('-') and "o" in message[0]:
         if message[1] in listOfMod[canal.lower()]:
             listOfMod[canal.lower()].remove(message[1])
+            # elif message[0] == "+b":
+            # s.send("PRIVMSG", canal, ":HEADSHOT")
+
 
 # découpe une ligne reçue
 def parse_line(line):
@@ -110,21 +122,22 @@ def parse_line(line):
             return cmd, pseudo, [], []
         else:
             if size == 3:
-                return cmd, pseudo, [], [str(line[2]).lstrip(':')]
+                return cmd, pseudo, [], [str(line[2])[1:]]
             else:
-                return cmd, pseudo, [], [str(line[2]).lstrip(':')]+line[3:]  
+                return cmd, pseudo, [], [str(line[2])[1:]] + line[3:]
     canal = str(line[2]).lstrip(':')
     if size == 3:
         return cmd, pseudo, canal, []
-    elif  size == 4:
-        return cmd, pseudo, canal, [str(line[3]).lstrip(':')]
+    elif size == 4:
+        return cmd, pseudo, canal, [str(line[3])[1:]]
     else:
-        return cmd, pseudo, canal, [str(line[3]).lstrip(':')]+line[4:]
+        return cmd, pseudo, canal, [str(line[3])[1:]] + line[4:]
+
 
 def parse(s, line, listOfChan, listOfMod):
     line = str.rstrip(line)
-    line = str.split(line)     
-    if(line[0] == "PING"):
+    line = str.split(line)
+    if line[0] == "PING":
         s.ping(line)
         return
     cmd, pseudo, canal, message = parse_line(line)
@@ -132,57 +145,96 @@ def parse(s, line, listOfChan, listOfMod):
         print(cmd, pseudo, canal, message)
     except:
         print("erreur d'affichage")
-                  
+
     if cmd == "JOIN":
-        join_canal(s, listOfChan, listOfMod, pseudo, canal)   
+        join_canal(s, listOfChan, listOfMod, pseudo, canal)
     if cmd == "MODE":
-        mode(listOfMod, canal, message)          
+        mode(s, listOfMod, canal, message)
     if cmd == "QUIT":
-        so_quit(listOfChan, listOfMod, pseudo) 
+        so_quit(listOfChan, listOfMod, pseudo)
     if cmd == "PART" or cmd == "KICK":
-        part_or_kick(listOfMod, pseudo, canal)      
+        part_or_kick(listOfMod, pseudo, canal)
     if cmd == "353":
         get_mods(listOfMod, message)
     if cmd == "PRIVMSG":
-        parse_prvmsg(s, listOfMod, pseudo, canal, message)     
-    if cmd == "NOTICE" and canal == s.NICK:
+        parse_prvmsg(s, listOfMod, pseudo, canal, message)
+    if cmd == "NOTICE" and canal == "PouletBot":
         parse_notice(s, listOfChan, pseudo, message)
+
+
+def listen(s, listOfChan):
+    while True:
+        try:
+            notice = input('>')
+            parse_notice(s, listOfChan, s.MASTER, notice.split(" "))
+        except:
+            return
+
+
+def quitte(s, pseudo, canal, message):
+    if pseudo == s.MASTER:
+        s.quit(":Ne me tue pas :(")
+    else:
+        s.send("NOTICE", pseudo, ":Tu n'es pas mon maître, infâme traitre!")
+
+
+# s.send(bytes("JOIN #transformicefr2\r\n", "UTF-8"))
+# s.send(bytes("JOIN #pouletbot\r\n", "UTF-8"))
+
 
 listOfChan = []
 listOfMod = {}
 ignore_list = []
 cmds = {}
 cmds.update(cmd.cmds)
-cmds['!modo'] = lambda s,p,c,m: cmd.send_modo(s,p,c,m,listOfMod)
-cmds['!info'] = lambda s,p,c,m:s.send("NOTICE", p, ":Je suis "+s.NICK+", le robot génie de "s.MASTER+"!")
-cmds['!secret'] = lambda s,p,c,m:s.send("NOTICE", p, ":Circulez, y'a rien à voir")
+cmds['!modo'] = lambda s, p, c, m: cmd.send_modo(s, p, c, m, listOfMod)
+cmds['!info'] = lambda s, p, c, m: s.send("NOTICE", p, ":Je suis PouletBot, le robot génie de Pouletbraise!")
+cmds['!secret'] = lambda s, p, c, m: s.send("NOTICE", p, ":Circulez, y'a rien à voir")
+cmds['!kill'] = quitte
+
 
 def serve(s, listOfChan, listOfMod):
     readlines = ""
-    
-    while 1:
-        readlines = s.recv_decode(readlines)
-        
+    scan = threading.Thread(target=listen, args=(s, listOfChan))
+    scan.setDaemon(True)
+    scan.start()
+
+    while s.connected:
+        try:
+            readlines = s.recv_decode(readlines)
+        except ConnectionAbortedError:
+            print("Connexion perdue")
+            exit()
+        except OSError:
+            print("Erreur système")
+            exit()
+
         temp = str.split(readlines, "\n")
-        readlines=temp.pop( )
-    
+        readlines = temp.pop()
+
         for line in temp:
-            t = threading.Thread(target=parse, args =(s, line, listOfChan, listOfMod))
+            t = threading.Thread(target=parse, args=(s, line, listOfChan, listOfMod))
             t.start()
-            #t.run()
-                
-if __name__ =='__main__':
+            # t.run()
+
+
+if __name__ == '__main__':
     try:
         s = my_socket.Socket()
         s.connect()
         s.send_data()
+
         serve(s, listOfChan, listOfMod)
+
+        s.close()
     except:
         import sys
+
         print(sys.exc_info()[0])
         print("---- -----")
         import traceback
+
         print(traceback.format_exc())
         print("---- -----")
-        print("Press Enter to continue ..." )
-        input() 
+        print("Press Enter to continue ...")
+        input()

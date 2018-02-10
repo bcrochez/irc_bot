@@ -8,7 +8,7 @@ baseurl =  "http://api.openweathermap.org/data/2.5/weather?"
 
 print("---- weather module loaded ----")
 
-def get_weather(location):
+def get_weather(location = "France"):
     query = "q="+urllib.parse.quote(location)+"&units=metric&lang=fr"
     url = baseurl + query
     try:

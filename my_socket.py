@@ -1,10 +1,13 @@
 # -*-coding:UTF-8 -*
 import chardet
 import socket
+import sys
+
 
 # decode ce qui a été reçu avec le bon encodage
 def recv_and_decode(readbuffer):
-    preferred_encs = ["UTF-8",  "cp_utf8", "CP1252","ISO-8859-1","iso8859_2", "cp858", "cp65001", "iso8859_15", "cp500", "mac_roman", "ascii"]
+    preferred_encs = ["UTF-8", "cp_utf8", "CP1252", "ISO-8859-1", "iso8859_2", "cp858", "cp65001", "iso8859_15",
+                      "cp500", "mac_roman", "ascii"]
     changed = False
     for enc in preferred_encs:
         try:
@@ -21,6 +24,7 @@ def recv_and_decode(readbuffer):
             res = readbuffer.decode(enc, 'ignore')
     return res
 
+
 class Socket():
     def __init__(self):
         self.HOST = "irc.rizon.net"
@@ -32,11 +36,14 @@ class Socket():
         self.MASTER = "XXXX"
         self.PWD = "XXXX"
         
+
+        self.connected = False
         self.s = socket.socket()
-        
+
     def connect(self):
         try:
             self.s.connect((self.HOST, self.PORT))
+            self.connected = True
         except:
             print("*** connection �chou�e ***")
             exit()
@@ -52,27 +59,37 @@ class Socket():
         print("---- data send ----")
 
         self.s.send(bytes("NOTICE %s :Hello Master\r\n" % self.MASTER, "UTF-8"))
-        
+        self.join("#labonnebraise")
+
     def recv_decode(self, readlines):
         readbuffer = self.s.recv(1024)
         return readlines + recv_and_decode(readbuffer)
-    
+
     def send(self, cmd, canal, message):
-        self.s.send(bytes(cmd+" "+canal+" "+message+"\r\n", "UTF-8"))
-        
+        self.s.send(bytes(cmd + " " + canal + " " + message + "\r\n", "UTF-8"))
+
     def ping(self, line):
         """ answer to ping
+        :param line:
         """
         self.s.send(bytes("PONG %s\r\n" % line[1], "UTF-8"))
         print(str(line))
-        
+
     def join(self, canal):
         self.s.send(bytes("JOIN %s\r\n" % canal, "UTF-8"))
-        
+
     def quit(self, message):
         self.s.send(bytes("QUIT %s \r\n" % message, "UTF-8"))
-        self.s.close()
-        exit()
-        
+        self.connected = False
+
     def names(self, canal):
         self.s.send(bytes("NAMES %s\r\n" % canal, "UTF-8"))
+
+    def nick(self, nick):
+        self.s.send(bytes("NICK %s\r\n" % nick, "UTF-8"))
+
+    def close(self):
+        try:
+            self.s.close()
+        except:
+            pass
